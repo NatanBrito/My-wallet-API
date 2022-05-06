@@ -1,14 +1,15 @@
 import { MongoClient } from "mongodb";
 import dotenv from "dotenv";
-
+import chalk from "chalk" 
 dotenv.config();
 
 
-let db;
 const mongoClient= new MongoClient(process.env.SERVER_DB);    
+let wallet;
 const promise= mongoClient.connect();
 promise.then(()=>{
-    db=mongoClient.db("myWallet");
+    wallet=mongoClient.db("myWallet");
     console.log(chalk.bold.blue(" data base em pé"))
 })
-export default db;
+export default wallet;
+
