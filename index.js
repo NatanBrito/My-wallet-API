@@ -5,7 +5,8 @@ import { MongoClient, ObjectId} from "mongodb";
 import dotenv from "dotenv";
 import joi from "joi";
 import bcrypt from "bcrypt";
-import { v4 as uuid} from "uuid"
+import { v4 as uuid} from "uuid";
+import dayjs from "dayjs";
 const app= express();
 app.use(cors());
 app.use(express.json());
@@ -38,7 +39,7 @@ app.post("/sign-up",async (req,res)=>{
       const searchEmail= await wallet.collection("users").findOne({email})  
       console.log({searchEmail})
       if(searchEmail){
-          res.status(400).send("e-mail já cadastrado")
+          res.status(400).send("e-mail has used")
           return;
         }
         await wallet.collection("users").insertOne(user);
@@ -67,6 +68,57 @@ app.post("/sign-in",async (req,res)=>{
         res.status(200).send(token);
     }catch(e){
         res.status(409).send(e)
+    }
+})
+app.post("/messages",async (req,res)=>{
+    const {authorization}=req.headers;
+    const {value,type,describe}=req.body;
+    const validateschema=joi.object({
+     value:joi.number().min(1).required(),
+     type: joi.any().valid("entrada", "saida").required(),
+     describe: joi.string().min(1).required() 
+    })
+    const objectValidate=validateschema.validate(req.body);
+    if(objectValidate.error){
+         res.status(400).send(objectValidate.error.details.map(e=>{return e.message}));
+         return;
+        }
+    const valid= authorization?.replace("bearer","").trim();
+    if(!valid)return res.sendStatus(401);
+    // const xx= "99995a21-a919-4f2f-841b-770d8cdb980d";
+    try{
+    const search= await wallet.collection("sessions").findOne({token:valid});
+    const searchUser= await wallet.collection("users").findOne({_id:search.userId})
+    if(!searchUser) return res.sendStatus(404)
+    const account= {value,type,describe,
+        time:dayjs().format("DD/MM"),
+        user:searchUser._id,
+    }
+     await wallet.collection("messages").insertOne(account)
+     delete account.user;
+    res.status(200).send(account)
+    }catch(e){
+        res.sendStatus(409);
+    }
+})
+app.get("/messages",async (req,res)=>{
+    let limit = req.query.limit;
+    const {authorization}=req.headers;
+    const valid= authorization?.replace("bearer","").trim();
+    if(!valid)return res.sendStatus(401);
+    try{
+    const search= await wallet.collection("sessions").findOne({token:valid});
+    const searchUser= await wallet.collection("users").findOne({_id:search.userId})
+    const messagesUser=await wallet.collection("messages").find({user:searchUser._id}).toArray();
+    messagesUser.forEach(m=>{
+    delete m.user;
+    })
+    if (!limit) {
+        limit = messagesUser.length;
+      }
+    res.status(200).send(messagesUser.splice(0, parseInt(limit)));
+    }catch(e){
+        res.sendStatus(409);
     }
 })
 
