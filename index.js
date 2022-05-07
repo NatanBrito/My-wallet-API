@@ -33,7 +33,7 @@ app.post("/sign-up",async (req,res)=>{
       res.status(409).send(validate.error.details.map((e)=>{return e.message}))
       return;
   }
-  const user={email,password:cryptPassword};
+  const user={name,email,password:cryptPassword};
   console.log({user})
   try{
       const searchEmail= await wallet.collection("users").findOne({email})  
@@ -65,7 +65,7 @@ app.post("/sign-in",async (req,res)=>{
             userId:searchEmail._id
         })
 
-        res.status(200).send(token);
+        res.status(200).send({token,user:searchEmail.name});
     }catch(e){
         res.status(409).send(e)
     }
@@ -110,8 +110,8 @@ app.get("/messages",async (req,res)=>{
     const search= await wallet.collection("sessions").findOne({token:valid});
     const searchUser= await wallet.collection("users").findOne({_id:search.userId})
     const messagesUser=await wallet.collection("messages").find({user:searchUser._id}).toArray();
-    messagesUser.forEach(m=>{
-    delete m.user;
+    messagesUser.forEach(message=>{
+    delete message.user;
     })
     if (!limit) {
         limit = messagesUser.length;
