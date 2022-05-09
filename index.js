@@ -122,7 +122,7 @@ app.get("/messages",async (req,res)=>{
     }
 })
 
-
-app.listen(process.env.DOOR, () => {
+const port = process.env.DOOR || 5000;
+app.listen(port, () => {
     console.log(chalk.bold.green("Silencio, estamos no AR!!!"));  });
   
