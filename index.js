@@ -11,7 +11,7 @@ const app= express();
 app.use(cors());
 app.use(express.json());
 dotenv.config();
-const mongoClient= new MongoClient(process.env.SERVER_DB);    
+const mongoClient= new MongoClient(process.env.MONGO_URI);    
 let wallet;
 const promise= mongoClient.connect();
 promise.then(()=>{
@@ -122,7 +122,7 @@ app.get("/messages",async (req,res)=>{
     }
 })
 
-const port = process.env.DOOR || 5000;
+const port = process.env.PORT || 5000;
 app.listen(port, () => {
     console.log(chalk.bold.green("Silencio, estamos no AR!!!"));  });
   
